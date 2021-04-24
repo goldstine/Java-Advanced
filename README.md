@@ -108,3 +108,45 @@ private void grow(int minCapacity) {
     }
 ```
 初始时候，容量默认扩容为原来的2倍，其他的和ArrayList相同，如果扩容还是不够，就直接设为为需要的容量，如果超过自己设置的阈值，则扩容到Integer.MAX_VALUE
+
+# List中的常用方法，相比于Collection，增加了一些关于索引的方法，List作为一种顺序存储结构
+（1）add(Integer,Object); //在指定位置插入一个元素Object           addAll(Integer,Collection eles):将集合eles添加到指定位置
+ArrayList coll=new ArrayList();
+coll.add(12);
+coll.add(23);
+coll.add(false);
+coll.add(new String("stine"));
+list.add(1,"12");
+（2）get(Integer index);//按照索引获取元素
+list.get(1);
+(3)获得元素在集合中首次出现的位置indexOf(12)
+int index=list.indexOf(23);
+System.out.println(index);//如果有元素23，则返回元素首次出现的索引，如果没有，则返回-1
+（4）lastIndexOf(Object)  //获得元素组后出现的索引，如果没有则返回-1
+System.out.println(lastIndexOf(23))
+(5)remove(int index):移除指定位置index处的元素，**并返回此元素**  
+这个方法在Collection中也有，但是是按照值删除的，所以这里是重载
+Object obj=list.remove(2);
+System.out.println(obj);
+System.out.println(list);
+(6)set(int,value);将指定位置的值改为Value
+(7)List sublist(int fromIndex,int toIndex):返回（fromIndex位置的子集合） 包括fromindex不包括toIndex，[)
+List sublist=list.subList(2,4);
+System.out.println(sublist);
+
+总结：常用方法
+（1）增:add(object obj)
+（2）删:remove(),remove(int)
+（3）改:set(i,value)
+（4）查:get(i)
+（5）插入:add(int,value)
+（6）长度:size()
+（7）遍历：iterator;forEach;普通循环size()+get(i)
+**remove(int)直接按照索引删除，调用的是collection的方法，如果要按照值进行删除remove(new Integer(2));    所以需要确定自己是要删除索引还是要删除对应值**
+
+
+
+
+
+
+
