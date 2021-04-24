@@ -145,8 +145,249 @@ System.out.println(sublist);
 **remove(int)直接按照索引删除，调用的是collection的方法，如果要按照值进行删除remove(new Integer(2));    所以需要确定自己是要删除索引还是要删除对应值**
 
 
+## set接口
+（1）hashset作为set接口的主要实现类，线程不安全，可以存储null
+（2）linkedHashSet：在hashset的基础上增加了一些指针，让其看起来有序，使得在遍历其内部数据时，可以按照添加的顺序遍历，LinkedHashSet的父接口是hashSet
+（3）TreeSet：底层通过红黑树实现，要求添加的元素是同一个类型，可以按照对象的某一些属性进行排序   接口Comparable Comparator对象排序接口
+
+**Set接口中没有额外定义新的方法，使用的都是collection中声明过的方法
+```
+/**
+     * Set:
+     * (1)无序性：不等于随机性，每次便利的时候都是确定的结果
+     *HashSet的遍历输出结果和添加的顺序没有关系，但是每次输出的结果都是一样的
+     * LinkedHashSet的遍历输出结果与添加的顺序是一致的
+     *原因是：hashset底层也是通过数组实现的，只不过在存储的时候是根据hashCode来决定存储的位置，与实际添加的顺序无关，所以表现出无序性
+     *
+     * （2）不可重复性
+     * 但是当添加两个new对象是可以的，引用的不可重复性
+     * set.add(new User("tom",12);
+     * set.add(new User("tom",12);//如果User类中没有重写equals(),则会认为这两个对象是不同的对象，通过引用进行比较，则可以同时存在于set中
+     * 如果User类中重写equals()，【并且需要写hashCode()】则按照值进行比较，set判断这两个对象是同一个对象，为了满足不可重复性，则只保存一个对象
+     * 并且需要写hashCode()，否则还是存储的2个对象User
+     *如果没有写hashCode()，则会调用Object中的hashCode()，该hashCode()是通过随机计算的hashCode，同一对象随机获得hashCode
+     * 二、添加元素的过程
+     * 以hashset为例，实际上是以散列的方式存储的，相同hash值对应的散列值相同，即对应的存储位置相同，不同hash值的对应的散列值也可能相同
+     * 添加过程：
+     *      当向hashset中添加元素a的时候，首先调用元素a所在类的hashCode()方法，计算元素a的hash值
+     *      此hash值接着通过某种算法计算出（散列函数）在底层数组中的存放位置（即索引位置），判断数组此位置上是否已经有元素：
+     *          如果此位置上没有其他元素，则元素a添加成功，---------情况1
+     *          如果此位置上有其他元素b（或以链表形式存在的多个元素），则比较元素a与元素b的hash值
+     *              如果hash值不相同，则添加成功    -----------------情况2
+     *              如果hash值相同，则调用元素a的equals方法判断元素a与元素b是否相等，
+     *                  equals()返回true，元素a添加失败
+     *                  equals()返回false,元素a添加成功   --------------情况3
+     * 对于添加成功的情况2和情况3：元素a与已经存在指定索引位置上的数据以链表的方式存储
+     * jdk7:元素a放到数组中，指向原来的元素
+     * jdk8:原来的元素在数组中，指向元素a
+     * 总结：7上8下
+     * public boolean equals(Object o){
+     *      if(this==o){return true;}
+     *     if(o==null||getClass()!=o.getClass()){return false;}
+     *     User user=(User) o;
+     *     if(age!=user.age)return false;
+     *     return name!=null?name.equals(user.name):user.name==null;
+     * }
+     * public int hashCode(){  //return name.hashCode()+1
+     *     int result=name!=null?name.hashCode():0;
+     *     result=31*result+age;   //31可以减少冲突，系数越大，计算出的hash地址越大，所谓的冲突就越小，查找起来效率也会提高
+     *     return result;//但是也不能太大，会造成溢出31只占5bit，相乘造成数据溢出的概率较小
+     * }//31可以由i*31==(i<<5)-1来表示，现在许多虚拟机都有做相关优化，提高算法效率
+     * //31是一个素数，素数作用就是如果用一个数字乘以素数，那么最终出来的结果只能被素数本身和被素数和1整除（减少冲突）
+     *
+     * 要求：向set中添加的类对象数据，其所在的类一定要重写hashCode()和equals()
+     * 重写的hashCode()和equals()尽可能保持一致性：相等的对象必须具有相等的散列码
+     * new一个hashSet，其实底层就是一个hashMap
+     *
+     * LinkedHashSet:
+     * LinkedHashSet作为HashSet的子类，再添加数据的同时，每一个数据还维护了两个引用，记录此数据前一个和后一个数据
+     * 优点：对于频繁的遍历操作，LinkedHashSet效率高于HashSet
+     *
+     * TreeSet：
+     *向TreeSet中添加的数据，要求是相同类的对象
+     *遍历的结果按照从小到大的顺序输出      字符串按照对应的ascll码排序，字典序
+     * 如果网TreeSet中添加的是类对象User{name,age},就可以由2中方式进行排序遍历输出
+     * 两种排序方式：自然排序（Comparable）和定制排序（Comparator）
+     * 直接使类实现Comparable接口 java.lang
+     *自然排序中，比较两个对象是否相同的标准为：compareTo()返回0，不再是equals()
+     *
+     * TreeSet和TreeMap采用红黑树的存储结构，有序，查询速度比List快
+     */
+```
+User.java
+```
+package com.atguigu.gulimall.search.thread;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+public class User implements Comparable{
+    private String name;
+    private int age;
+
+    @Override
+    public int compareTo(Object o) {  //按照姓名从小到大排列
+
+        if(o instanceof User){
+            User user=(User)o;
+//            return this.name.compareTo(user.name);
+//            return -this.name.compareTo(user.name);//从大到小
+            int compare= -this.name.compareTo(user.name);
+            if(compare!=0){
+                //直接根据名字判断返回
+                return compare;
+            }else{
+                return Integer.compare(this.age,user.age);//默认年龄从小到大排列
+            }
+        }else{
+            throw new RuntimeException("输入的类型不匹配");
+        }
+
+    }
+}
+```
+public static void main(String[] args) {
+
+        Vector v=new Vector();
+
+        //TreeSet定制排序
+        Comparator com=new Comparator() {
+            //按照年龄从小到大排列
+            @Override
+            public int compare(Object o1, Object o2) {
+                if (o1 instanceof User && o2 instanceof User) {
+                    User u1=(User)o1;
+                    User u2=(User)o2;
+                    return Integer.compare(u1.getAge(),u2.getAge());
+                }else{
+                    throw new RuntimeException("输入的数据类型不匹配");
+                }
+            }
+        };
+        TreeSet set1=new TreeSet(com);
+        set1.add(new User("Tom",12));
+        set1.add(new User("Jerry",32));
+        set1.add(new User("Jim",2));
+        set1.add(new User("Mike",65));
+        set1.add(new User("Jack",33));
+        set1.add(new User("Jack",56));
+
+        Iterator iterator1 = set1.iterator();
+        while(iterator1.hasNext()){
+            System.out.println(iterator1.next());
+        }
+
+        System.out.println("===============================================");
+
+        TreeSet set=new TreeSet();
+        //失败：不能添加不同类的对象
+//        set.add(123);
+//        set.add(456);
+//        set.add("AA");
+//        set.add(new String("tom"));
+//          set.add(34);
+//          set.add(323);
+//          set.add(-12);
+//          set.add(2);
+        //String类型
+//        set.add("as");
+//        set.add("Stine");
+//        set.add("bf");
+
+        set.add(new User("Tom",12));
+        set.add(new User("Jerry",32));
+        set.add(new User("Jim",2));
+        set.add(new User("Mike",65));
+        set.add(new User("Jack",33));
+        set.add(new User("Jack",56));   //如果User中接口的实现只实现了通过名字进行比较，则这两个会被认为是同一个元素，而丢弃第二个元素
+        //如果接口中实现了对年龄比较，则属于不同元素
+        Iterator iterator = set.iterator();
+        while(iterator.hasNext()){
+            System.out.println(iterator.next());
+        }
+
+////        Set set=new HashSet();
+//        Set set=new LinkedHashSet();
+//        set.add(456);
+//        set.add(23);
+//        set.add("aa");
+//        set.add(43);
+//        set.add("12");
+//        Iterator iterator = set.iterator();
+//        while(iterator.hasNext()){
+//            System.out.println(iterator.next());
+//        }
 
 
+//        ArrayList coll=new ArrayList();
+//        coll.add(123);
+//        coll.add(456);
+//        coll.add(new String("jerry"));
+//        coll.add(false);
+//        System.out.println(coll);
+//        coll.add(1,"bb");
+//        System.out.println(coll);
+//        System.out.println(coll.hashCode());
 
+//        Iterator iterator = coll.iterator();
+//        for (int i = 0; i < coll.size(); i++) {
+//            System.out.println(iterator.next());
+//        }
+
+//        while(iterator.hasNext()){
+//            System.out.println(iterator.next());
+//        }
+//
+//        //forEach遍历集合
+//        for (Object o : coll) {
+//            System.out.println(o);
+//        }
+        /**
+         * foreach首先将集合元素取出来，然后复制给变量
+         */
+//        for (Object o : coll) {
+//            o="GG";   //这里修改的是取出来的元素赋值的元素o
+//            //所以原来的集合中的元素没有改变
+//        }
+//        for (Object o : coll) {
+//            System.out.println(o);
+//        }
+
+
+//        //集合转为数组,以数组的方式遍历
+//        Object[] arr=coll.toArray();
+//        for(int i=0;i<arr.length;i++){
+//            System.out.println(arr[i]);
+//        }
+//
+//        //将数组转为集合
+//        List<String> list = Arrays.asList(new String[]{"aa", "bb", "cc"});
+//        System.out.println(list);
+//
+//        List arr1=Arrays.asList(new int[]{123,232});
+//        System.out.println(arr1.size());    //1
+//
+//        List<int[]> arr2=Arrays.asList(new int[]{3434,23});
+//        System.out.println(arr2);//1
+//
+//        //获得2个元素
+//        List list1=Arrays.asList(123,132);
+//        System.out.println(list1);  //2
+//
+//        List list2=Arrays.asList(new Integer[]{23,43});
+//        System.out.println(list2);//2
+
+        //iterator():返回iterator接口的实例，用于遍历集合元素，
+
+
+//        ArrayList list11=new ArrayList();
+//        LinkedList list12=new LinkedList();
+//        Vector list13=new Vector();
+}
+```
 
 
