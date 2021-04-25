@@ -234,4 +234,147 @@ public class FileReaderWriterTest {
         }
     }
 ```
+**不能使用字符流来处理图片等字节数据，要实现对图片和视频数据的复制，就需要使用字节流：InputStream ,OutputStream**
+
+## 字节流 InputStream和OutputStream
+(1)使用字节流读取文本文件，可能会出现乱码
+（2）字节流实现对图片的复制
+（3）指定路径下文件的复制（字节流可以实现文本文件的复制，但是不能用来读取文本文件）
+```
+@Test
+    public void test1() {
+        /**
+         * 说明：如果是纯英文文本，其实一个英文字母和数字还是使用的一个字节Byte存储的，所以使用字节流去读写，也是可以的
+         * 但是对于中文汉字的文本，一个汉字，需要3个Byte存储，此时如果通过字节流进行读写就会乱码
+         *结论：
+         * 1、对于文本文件（.txt,.java,.c.cpp），使用字符流进行处理
+         * 2、对于非文本文件(.jpg,.mp3,.mp4,.avi,.doc,.ppt)，使用字节流处理
+         */
+        FileInputStream fis= null;
+        try {
+            //1、创建文件
+            File file=new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello.txt");
+            //2、创建字节流
+            fis = new FileInputStream(file);
+
+            //3、读数据
+            byte[] buffer=new byte[5];
+            int len;//记录每次读取的字节的个数
+            while((len=fis.read(buffer))!=-1){
+                String str=new String(buffer,0,len);
+                System.out.print(str);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            //4、关闭流资源
+            try {
+                if(fis!=null) {
+                    fis.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 实现对图片的一个复制
+     */
+    @Test
+    public void test2() {
+        FileInputStream fis= null;
+        FileOutputStream fos= null;
+        try {
+            File srcFile=new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\0.png");
+            File destFile=new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\1.png");
+
+            fis = new FileInputStream(srcFile);
+            fos = new FileOutputStream(destFile);
+
+            byte[] buffer=new byte[5];
+            int len;
+            while((len=fis.read(buffer))!=-1){
+                fos.write(buffer,0,len);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if(fis!=null) {
+                    fis.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+
+                try {
+                    if(fos!=null) {
+                        fos.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+    }
+
+    /**
+     * 指定路径下文件的复制
+     * 文本文件使用字符流，非文本文件使用字节流
+     * 【说明】如果只是要复制文本文件，使用字节流FileInputStream和FileOutputStream也是可以的，但如果是要读，就不能使用字节流读文本文件，会乱码
+     *但如果是字节文件（非文本文件）不能使用字符流进行复制
+     */
+    @Test
+    public void test3(){
+        //记录复制的时间
+        long start=System.currentTimeMillis();
+        String srcPath="src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello.txt";
+        String destPath="src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello1.txt";
+        copyFile(srcPath,destPath);
+
+
+        long end=System.currentTimeMillis();
+        System.out.println("复制操作花费的时间为："+(end-start));
+    }
+
+    public void copyFile(String srcPath,String destPath){
+        FileInputStream fis= null;
+        FileOutputStream fos= null;
+        try {
+            File srcFile=new File(srcPath);
+            File destFile=new File(destPath);
+
+            fis = new FileInputStream(srcFile);
+            fos = new FileOutputStream(destFile);
+
+            byte[] buffer=new byte[1024];
+            int len;
+            while((len=fis.read(buffer))!=-1){
+                fos.write(buffer,0,len);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if(fis!=null) {
+                    fis.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+
+                try {
+                    if(fos!=null) {
+                        fos.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+    }
+```
 
