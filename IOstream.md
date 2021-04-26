@@ -875,6 +875,291 @@ public class FileReaderWriterTest {
      * 单元测试方法还是main(),相对路径都是基于当前project的
      */
 ```
+### 对象流  ObjectInputStream  ObjectOutputStream    **序列化**
+用于存储和读取基本数据类型或**对象**的处理流，它的强大之处就是可以把java中的对象写入到数据源中，也能把对象从数据源中还原回来。</br>
 
++ 序列化：用ObjectOutputStream类保存基本类型数据或对象的机制
++ 反序列化：用ObjectInputStream类读取基本数据类型或对象的机制
 
+ObjectOutputStream和ObjectInputStream不能序列化**static**和**transient**修饰的成员变量</br>
+
++ 对象的序列化机制：允许把内存中的java对象转换为平台无关的二进制流，从而允许把这种二进制流持久地保存在磁盘上，或者通过网络将这种二进制流传输到另一个网络节点。当其它程序获取了这种二进制流，就可以恢复成原来的java对象
++ 序列化的好处在于可将任何实现类Serializable接口的对象转化为字节数据，使其在保存和传输时可被还原
++ 序列化是RMI（remote method invoke，远程方法调用）过程的参数和返回值都必须实现的机制，而RMI是javaee的基础，因此序列化机制是JAVAEE平台的基础
++ 如果需要让某一个对象支持序列化机制，则必须让对象所属的类及其属性是可序列化的，为了让某个类是可序列化的，该类必须实现如下两个接口之一
++ 否则，会抛出NotSerializableException异常
++ Serializable
++ Externalizable
+
++ 凡是实现Serializable接口的类都有一个表示序列化版本标识符的静态变量；
++ private Static final long serialVersionUID;
++ serialVersionUID用来表明类的不同版本之间的兼容性，简言之，其目的是以序列化对象进行版本控制，有关个版本反序列化时是否兼容
++ 如果类没有显式定义这个静态变量，他的值是java运行时环境根据类的内部细节自动生成的，若类的实例变量做了修改，serialVersionUID可能发生变化，故建议显式声明
++ 简单来说，java的序列化机制是通过在运行时判断类的serialVersionUID来验证版本一致的，在进行发序列化时，jvm会把传来的字节流中的serialVersionUID与本地实体类中的相应实体类SerialVersionUID进行比较，如果相同就认为是一致的，可以进行反序列化，否则就会出现序列化版本不一致的异常（**InvalidCastException**）
+
+#### （1）需要进行序列化的对象
+```
+/**
+ * Person需要满足如下的要求，方可序列化
+ *(1)需要实现标识接口Serializable，表示接口内部没有定义需要实现的方法
+ *（2）当前类提供一个全局常量：SerialVersionUID
+ * (3)除了当前Person类需要实现Serializable接口之外，还必须保证其内部所有属性也是必须可序列化的
+ * 【默认情况下，基本数据类型是可序列化的】
+ */
+
+public class Person implements Serializable {
+
+    public static final long serialVersionUID = 4223232323L;
+
+    private static String name;
+    private transient int age;
+    private Account acct;
+
+    public Person() {
+    }
+
+    public Person(String name, int age, Account acct) {
+        this.name = name;
+        this.age = age;
+        this.acct = acct;
+    }
+
+    public Person(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                ", acct=" + acct +
+                '}';
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+}
+class Account implements Serializable{
+    public static final long serialVersionUID=12323343L;
+    private double balance;
+
+    public Account(double balance) {
+        this.balance = balance;
+    }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "balance=" + balance +
+                '}';
+    }
+}
+```
+#### (2)序列化与反序列化
+
+```
+/**
+     * 1、对象流的使用：ObjectInputStream ObjectOutputStream （字节流）
+     * 2、作用：用于存储和读取基本数据类型数据或对象的处理流，他的强大之处就是可以把java对象进行持久化
+     * 3、要想一个java对象可序列化的，需要满足一定的要求：
+     * 实现接口Serializable externalizable ，因为String已经实现了Serializable接口，所以可以直接被序列化
+     * public final class String
+     *     implements java.io.Serializable, Comparable<String>, CharSequence {}
+     *
+     *一般是对json数据进行序列化，不会直接对Person等类的对象进行序列化
+     */
+
+    @Test
+    public void test1(){
+        ObjectOutputStream oos= null;
+        try {
+            //序列化过程：将内存中的java对象保存到磁盘中或通过网络传输出去
+            //使用ObjectOutputStream
+            oos = new ObjectOutputStream(new FileOutputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\network\\object.dat"));
+            oos.writeObject(new String("我爱北京天安门"));
+            oos.flush();
+
+            //序列化一个自定义类
+            oos.writeObject(new Person("张三",23));
+            oos.flush();
+
+            //包含内部类
+            oos.writeObject(new Person("李四",23,new Account(50000)));
+            oos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if(oos!=null) {
+                try {
+                    oos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    /**
+     * 反序列化机制:将磁盘中的文件还原成内存中的一个对象
+     * 使用ObjectInputStream
+     */
+    @Test
+    public void test2() {
+        ObjectInputStream ois= null;
+        try {
+            ois = new ObjectInputStream(new FileInputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\network\\object.dat"));
+
+            String o = (String)ois.readObject();
+
+            System.out.println(o);
+
+            //对自定义类的反序列化
+            //读的顺序与写的顺序要保持一致
+            Person p=(Person)ois.readObject();
+            System.out.println(p);
+
+            Person p1=(Person) ois.readObject();
+            System.out.println(p1);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if(ois!=null) {
+                try {
+                    ois.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+```
+## 随机存取文件流 RandomAccessFile类
++ RandomAccessFile声明在java.io包下，但直接继承于java.lang.Object类，并且它实现了DataInput,DataOutput这两个接口，也就意味着这个既可以读也可以写
++ RandomAccessFile类支持“随机访问”的方式，程序可以跳到文件的任意地方来读，写文件
+   + 支持只访问文件的部分内容
+   + 可以向已存在的文件后追加内容
++ RandomAccessFile对象包含一个记录指针，用以标识当前读写出的位置
++ RandomAccessFile类对象可以自由移动记录指针
+   + long getFilePointer():获取文件记录指针的当前位置
+   + void seek(long pos):将文件记录指针定位到pos位置
+
+**应用**
+可以用RandomAccessFile这个类，来实现一个多线程断点下载功能，下载前会建立两个临时文件，一个是与被下载文件相同大小的空文件，另一个是记录文件指针的位置文件，每次暂停的时候，都会保存上一次的指针，然后断点下载的时候，会继续从上一次的地方下载，从而实现断点下载或上传的功能。
+
+```
+/**
+     * RandomAccessFile的使用：
+     * （1）RandomAccessFile直接继承于java.lang.Object类，实现类DataInput,DataOutput接口
+     * （2）RandomAccessFile既可以作为输入流，也可以作为输出流
+     *(3)如果RandomAccessFile作为输出时，写出到的文件如果不存在，则执行过程中会自己创建一个文件
+     * 如果写出到的文件存在，则会对已经存在的文件进行覆盖，从头覆盖
+     *（4）通过一些特殊操作，实现RandomAccessFile的数据“插入”
+     * 这种插入方式实际开销比较大，所以一般都是做追加，不做插入数据
+     */
+
+    @Test
+    public void test1()  {
+        RandomAccessFile raf1= null;
+        RandomAccessFile raf2= null;
+        try {
+            raf1 = new RandomAccessFile(new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello.txt"),"rw");
+            //第二个参数，指定文件的读写模式：（1）r:只读(2)rw读写（3）rwd：读写+同步文件内容的更新（4）rws:读写+同步文件内容和元数据的更新
+            raf2 = new RandomAccessFile(new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\network\\hello1.txt"),"rw");
+
+            byte[] buffer=new byte[1024];
+            int len;
+            while((len=raf1.read(buffer))!=-1){
+                raf2.write(buffer,0,len);
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if(raf1!=null) {
+                try {
+                    raf1.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if(raf2!=null) {
+                try {
+                    raf2.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    /**
+     * 对文件内容的覆盖
+     *
+     */
+    @Test
+    public void test2() throws IOException {
+       RandomAccessFile raf1 = new RandomAccessFile(new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\network\\hello.txt"),"rw");
+       raf1.seek(3); //将指针角标调到位置为3的位置，默认从0开始计数的，实现覆盖操作，这里如果直接write会将后面的数据覆盖，不会实现插入操作
+       raf1.write("goldstine".getBytes());//默认指针执行0号位置，所以实现的是覆盖操作，从开始的位置进行覆盖
+        raf1.close();
+//        RandomAccessFile raf2 = new RandomAccessFile(new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\network\\hello2.txt"),"rw");
+    }
+
+    /**
+     * 使用RandomAccessFile实现插入效果
+     * 首先将插入位置后面的所有数据先保存起来，保存操作实际上已经将指针位置移动到了文件最后面，然后将指针从新seek到插入位置，然后将数据插入文件
+     * 最后再将原来保存的数据从当前文件最后面覆盖
+     */
+    @Test
+    public void test3() throws IOException {
+        RandomAccessFile raf1 = new RandomAccessFile(new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\network\\hello.txt"),"rw");
+        raf1.seek(3);
+
+        //将插入位置后面的数据复制保存,可能存在多行，所以通过while读取
+        //保存指针3后面的所有数据到StringBuilder
+        StringBuilder builder=new StringBuilder((int)new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\network\\hello.txt").length());
+        byte[] buffer = new byte[20];
+        int len;
+        while((len=raf1.read(buffer))!=-1){
+            builder.append(new String(buffer,0,len));
+        }
+        raf1.seek(3); //调回指针，写入"xyz"
+        raf1.write("liulei".getBytes());
+
+        //将StringBuilder中的数据写回去
+        raf1.write(builder.toString().getBytes());  //builder没有getBytes()，所以先将其转为字符串toString(),然后通过getBytes()方法转为字节数组
+
+        //思考：将StringBuilder替换为ByteArrayOutPutStream
+    }
+```
+### NIO.2中Path、Paths、Files类的使用
++ 早期的java只提供一个File类来访问文件系统，但是File类功能有限，性能不高，而且，大多数方法在出错时仅返回失败，并不会提供异常信息
++ NIO.2为了弥补不足，引入Path接口，代表一个平台无关的平台路径，描述了目录结构中文件的位置，Path可以看成是File类的升级版本，实际引用的资源也可以不存在
+
+### 通过jar包来操作IO  commons-io-2.5.jar
+IDEA中导入jar：直接在对应的模块下创建（lib）libs目录(与src同级),然后将jar复制进该文件夹中，然后右键点击add as library
+```
+//通过工具类实现文件操作
+File srcFile=new File("hello.txt");
+File destFile=new File("hello1.txt");
+FileUtils.copyFile(srcFile,destFile);
+
+```
 
