@@ -377,4 +377,378 @@ public class FileReaderWriterTest {
         }
     }
 ```
+## 缓冲流 BufferedInputStream BufferedOutputStream (缓冲字节流)| BufferedReader BufferedWriter(缓冲字符流)
+**应用：实现图片的加密和解密；对文本文件字符出现的个数进行Map统计**
+```
+/**
+     * 缓冲流的使用
+     * （1）BufferedInputStream
+     * (2)BufferedOutputStream
+     * (3)BufferedReader
+     * (4)BufferedWriter
+     *
+     * 缓冲流的作用：提高流的读取和写入的速度
+     */
 
+    /**
+     * 实现非文本文件的复制
+     */
+    @Test
+    public void test1() {
+        BufferedInputStream bis= null;
+        BufferedOutputStream bos= null;
+        try {
+            //1、造文件
+            File srcFile=new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\0.png");
+            File destFile=new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\2.png");
+            //2、创建流
+            //2.1创建节点流
+            FileInputStream fis=new FileInputStream(srcFile);
+            FileOutputStream fos=new FileOutputStream(destFile);
+            //2.2创建缓冲流
+            bis = new BufferedInputStream(fis);
+            bos = new BufferedOutputStream(fos);
+            //3、复制的细节，读取和写入
+            byte[] buffer=new byte[10];
+            int len;
+            while((len=bis.read(buffer))!=-1){
+                bos.write(buffer,0,len);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+
+            try {
+                if(bos!=null) {
+                    bos.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                if(bis!=null) {
+                    bis.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        //4、资源关闭,要求：先关闭外层的流，再关闭内层的流
+
+        //说明：关闭外层流的同时，内层流也会自动进行关闭；关于内层流的关闭，我们可以省略
+//        fos.close();
+//        fis.close();
+
+    }
+
+    /**
+     * 实现文件复制的方法，对比BufferedInputStream和BufferedOutputStream比InputStream和OutputStream更快
+     * 这里可以采用复制视频的方式比较，一般字符缓冲流的速度更快
+     * 缓冲流能够提高读写速度的原因是因为底层通过创建一个缓冲区8*1024
+     */
+    @Test
+    public void test2(){
+        long start=System.currentTimeMillis();
+
+        String srcPath="src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\0.png";
+
+        String destPath="src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\3.png";
+
+        copyFile(srcPath,destPath);
+
+        long end=System.currentTimeMillis();
+        System.out.println("赋值操作花费的时间为："+(end-start));
+    }
+
+    public void copyFile(String srcPath,String destPath){
+        BufferedInputStream bis= null;
+        BufferedOutputStream bos= null;
+        try {
+            //1、造文件
+            File srcFile=new File(srcPath);
+            File destFile=new File(destPath);
+            //2、创建流
+            //2.1创建节点流
+            FileInputStream fis=new FileInputStream(srcFile);
+            FileOutputStream fos=new FileOutputStream(destFile);
+            //2.2创建缓冲流
+            bis = new BufferedInputStream(fis);
+            bos = new BufferedOutputStream(fos);
+            //3、复制的细节，读取和写入
+            byte[] buffer=new byte[1024];
+            int len;
+            while((len=bis.read(buffer))!=-1){
+                bos.write(buffer,0,len);
+
+//                bos.flush();//可以强制将缓冲区中的内容写出或者读入，其实底层已经自动flush()，达到一定的阈值就会自动flush()
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+
+            try {
+                if(bos!=null) {
+                    bos.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                if(bis!=null) {
+                    bis.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 测试缓冲字符流
+     */
+    @Test
+    public void test3()  {
+        BufferedReader br= null;
+        BufferedWriter bw= null;
+        try {
+            //创建文件
+            File srcFile=new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello.txt");
+            File destFile=new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\output2.txt");
+            //创建流
+            FileReader fr=new FileReader(srcFile);
+            FileWriter fw=new FileWriter(destFile);
+
+            br = new BufferedReader(fr);
+            bw = new BufferedWriter(fw);
+
+            //读写文件   方式一
+//            char[] buffer=new char[10];
+//            int len;
+//            while((len=br.read(buffer))!=-1){
+//                bw.write(buffer,0,len);
+//            }
+            //方式二
+            String data;
+            while((data=br.readLine())!=null){
+                //方式一：直接添加换行\n
+//                bw.write(data+"\n");//data中不包含换行符，输出直接全部都是在同一行
+                //方式二：直接添加bw.newLine()
+                bw.write(data);
+                bw.newLine();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            //关闭流
+            try {
+                if(br!=null) {
+                    br.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                if(bw!=null) {
+                    bw.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+    /**
+     * 图片的加密和解密,字节流
+     */
+    @Test
+    public void test4()  {
+        FileInputStream fis= null;
+        FileOutputStream fos= null;
+        try {
+            //【注】其实可以直接写成FileInputStream fis=new FileInputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\0.png");
+            //会自动将字符串包装成一个File文件
+            fis = new FileInputStream(new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\0.png"));
+            fos = new FileOutputStream(new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\2.png"));
+
+            byte[] buffer=new byte[20];
+            int len;
+            while((len=fis.read(buffer))!=-1){
+                //需要提前对字节数组进行修改，加密
+                //一次读取20个字节，需要循环一个一个字节修改
+//                for(byte b:buffer){
+//                    b=(byte)(b^5);
+//                }          //错误的写法，增强for循环，没有修改源buffer中的数据
+                //正确的写法
+                for (int i = 0; i < len; i++) {
+                    buffer[i]=(byte)(buffer[i]^5);//加密以后的文件与源文件大小相同，异或加密不改变源文件的大小，加密以后的文件不能打开
+                }
+
+                fos.write(buffer,0,len);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        finally {
+            try {
+                if(fis!=null) {
+                    fis.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                if(fos!=null) {
+                    fos.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    /**
+     * 图片的解密，字节流    m,n,    m^n^n=m
+     */
+    @Test
+    public void test5(){
+        /**
+         * 解密只需要在加密的基础上，以加密文件作为原始文件再进行一次加密，就可以得到最初的解密文件
+         */
+    }
+
+    /**
+     * 获取文本上每个字符出现的次数
+     * 遍历文本的每一个字符，字符及出现的次数保存在map中，将map中数据写入文件（map中内存中的数据）写入到磁盘中
+     * map的key存放字符，value可以用来统计出现的次数
+     */
+    @Test
+    public void test6() {
+        FileReader fr= null;
+        BufferedWriter bw= null;
+        try {
+            fr = new FileReader(new File("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello.txt"));
+            bw = new BufferedWriter(new FileWriter("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\count.txt"));
+            //创建map
+            Map<Character, Integer> map = new HashMap<>();
+            //遍历每一个字符，每一个字符出现的次数放到map中
+            int c=0;
+            while ((c = fr.read()) != -1) {
+                //int还原char
+                char ch=(char)c;
+                if (map.get(ch) == null) {
+                    map.put(ch,1);
+                }else{
+                    map.put(ch,map.get(ch)+1);
+                }
+            }
+            //把map中数据存在文件count.txt
+//        创建writer
+            //遍历map，再写入数据
+            Set<Map.Entry<Character,Integer>> entrySet=map.entrySet();
+            for(Map.Entry<Character,Integer> entry:entrySet){
+                switch(entry.getKey()){
+                    case ' ':
+                        bw.write("空格="+entry.getValue());
+                        break;
+                    case '\t':
+                        bw.write("tab键="+entry.getValue());
+                        break;
+                    case '\r':
+                        bw.write("回车="+entry.getValue());
+                        break;
+                    case '\n':
+                        bw.write("换行="+entry.getValue());
+                        break;
+                    default:
+                        bw.write(entry.getKey()+"="+entry.getValue());
+                        break;
+                }
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if(bw!=null) {
+                    bw.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                if(fr!=null) {
+                    fr.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+```
+## 转换流 （字符流）InputStreamReader OutputStreamWriter
+**应用：可以实现文件编码方式转换 从utf-8编码方式转为gbk编码方式**
+```
+/**
+     * 转换流
+     * 文件读取，首先将文件通过字节流读入，然后将读入的字节流转换为输入的字符流，将文件读入程序
+     * 文件写出：将文件从程序中通过字符流的形式输出，然后将字符流转换为字节流，将文件以字节流输出到磁盘中
+     *
+     * 1、转换流
+     * InputStreamReader
+     * OutputStreamWriter,   一个流是属于字符流还是字节流，应该看后缀，所以这两个流属于字符流
+     *
+     *解码：将字节，字节数组------>字符数组，字符串InputStreamReader
+     * 编码：字符数组，字符串---------->字节、字节数组OutputStreamWriter
+     *
+     * 字符集
+     */
+    @Test
+    public void test1() throws IOException {
+        //此时处理异常的话，仍然应该使用try -catch-finally
+        FileInputStream fis=new FileInputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello.txt");
+        InputStreamReader isr=new InputStreamReader(fis,"UTF-8");//如果不写字符集，就是用系统默认的字符集，IDEA设置的utf-8
+        //第二个参数指定字符集，是根据存的时候采用的编码方式写的
+        char[] cbuf=new char[20];
+        int len;
+        while((len=isr.read(cbuf))!=-1){
+            String str=new String(cbuf,0,len);
+            System.out.println(str);
+        }
+
+        isr.close();
+    }
+    /**
+     * 综合使用InputStreamReader和OutputStreamWriter
+     *应用：可以转换文件的编码方式 从utf-8编码的文件转换为gbk编码的文件
+     */
+    @Test
+    public void test2() throws IOException {
+        FileInputStream fis=new FileInputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello.txt");
+
+        FileOutputStream fos=new FileOutputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\hello_gbk.txt");
+        InputStreamReader isr=new InputStreamReader(fis,"UTF-8");
+        OutputStreamWriter osw=new OutputStreamWriter(fos,"gbk");
+
+        char[] cbuf=new char[20];
+        int len;
+        while((len=isr.read(cbuf))!=-1){
+            osw.write(cbuf,0,len);
+        }
+
+        osw.close();
+        isr.close();
+//        fos.close();
+//        fis.close();
+
+    }
+/**
+ * 多种字符编码方式
+ */
+ ```
+ ## 输入输出流
+ 
