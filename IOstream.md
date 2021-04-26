@@ -862,4 +862,19 @@ public class FileReaderWriterTest {
         dis.close();
     }
 ```
+### IDEA和Eclipse中相对路径的区别：
+```
+/**
+     * 【注意】：
+     * 相对路径在IDEA和eclipse中使用的区别：
+     * IDEA:
+     * 如果使用单元测试方法，相对路径基于当前的Moudle的
+     * 如果使用main()测试，相对路径基于当前project的
+     * 
+     * Eclipse：
+     * 单元测试方法还是main(),相对路径都是基于当前project的
+     */
+```
+
+
 
