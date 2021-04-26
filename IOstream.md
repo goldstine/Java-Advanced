@@ -750,5 +750,116 @@ public class FileReaderWriterTest {
  * 多种字符编码方式
  */
  ```
- ## 输入输出流
- 
+ ## 输入输出流  打印流（将流进行重定向） 数据流（对基本数据类型数据的读写操作）
+ ```
+  /**
+     * (一)标准的输入输出流，
+     * 标准输入流：键盘输入System.in   标准输出流：显示器、控制台输出System.out
+     * System.in的类型是InputStream  System.out的类型是PrintStream,其是OutputStream的子类  FilterOutputStream的子类
+     *可以通过System类的setIn(InputStream is)/setOut(PrintStream ps)方式重新指定输入输出流  重定向
+     *
+     * （二）打印流,都是输出流
+     *PrintStream（打印字节输出流）;PrintWriter（打印字符输出流）
+     * 实现将基本数据类型的数据格式转化为字符串输出
+     *提供一系列的重载print()和println()
+     *
+     * （三）数据流
+     *对基本数据类型操作
+     */
+//    @Test
+//    public void test1()  {
+            public static void main(String args[]){
+        BufferedReader br= null;
+        try {
+            //从键盘输入字符串，要求将读取到的整行字符串转换成大写输出，然后继续进行输入操作，直至当输入e或者exit时，退出程序
+            //方法一：使用scanner实现  next():返回字符串
+            //方法二：System.in实现。System.in----》转换流----》BufferedReader的readLine()
+            InputStreamReader isr=new InputStreamReader(System.in);
+            br = new BufferedReader(isr);
+            String data;
+            while (true) {
+                System.out.println("请输入字符串：");
+                data=br.readLine();
+                if("e".equalsIgnoreCase(data)||"exit".equalsIgnoreCase(data)){
+                    System.out.println("程序结束");
+                    break;
+                }
+                String s = data.toUpperCase();
+                System.out.println(s);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if(br!=null) {
+                    br.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 打印流  重定向：从控制台输出重定向到文件输出
+     */
+    @Test
+    public void test2(){
+
+        PrintStream ps= null;
+        try {
+            FileOutputStream fos=new FileOutputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\printstream.txt");
+            ps = new PrintStream(fos,true);
+            //创建打印输出流，设置为自动刷新模式（写入换行符或字节'\n'都会刷新缓冲区）
+            if(ps!=null){
+                System.setOut(ps);//把标准输出流（控制台输出）改成文件
+            }
+            for(int i=0;i<=255;i++){
+                System.out.print((char)i);
+                if(i%50==0){
+                    System.out.println();
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if(ps!=null) {
+                ps.close();
+            }
+        }
+    }
+
+    /**
+     * 数据流
+     * （1）DataInputStream (2)DataOutputStream  字节流
+     *作用：用于读取或写出基本数据类型的变量或字符串
+     * 注意：处理异常的话，仍然应该使用try-catch-finanly
+     */
+    @Test
+    public void test3() throws IOException {
+        DataOutputStream dos=new DataOutputStream(new FileOutputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\datastream.txt"));
+        dos.writeUTF("速度");
+        dos.flush();//刷新操作，将数据写入文件
+        dos.writeInt(23);
+        dos.flush();
+        dos.writeBoolean(true);
+        dos.flush();
+
+        dos.close();
+    }
+    /**
+     * 读取数据流
+     * 将文件中存储的基本数据类型变量和字符串读取到内存中，保存在变量中
+     * 注意点：读取不同类型的数据顺序要与当初写入文件时，保存的数据顺序一致
+     */
+    @Test
+    public void test4() throws IOException {
+        DataInputStream dis = new DataInputStream(new FileInputStream("src\\main\\java\\com\\atguigu\\gulimall\\search\\thread\\IOStream\\datastream.txt"));
+        String name = dis.readUTF();
+        int age = dis.readInt();
+        boolean b = dis.readBoolean();//读取的顺序必须按照文件的写入顺序一致，否则会报错
+        System.out.println("name:"+name+"age:"+age+"b:"+b);
+        dis.close();
+    }
+```
+
